@@ -76,6 +76,9 @@ with torch.no_grad():
             predicted_3d_pos_flip = model_pos(batch_input_flip)
             predicted_3d_pos_2 = flip_data(predicted_3d_pos_flip) # Flip back
             predicted_3d_pos = (predicted_3d_pos_1 + predicted_3d_pos_2) / 2.0
+
+            predicted_feat = model_pos(batch_input, return_rep=True)
+            print(predicted_feat.shape)
         else:
             predicted_3d_pos = model_pos(batch_input)
         if args.rootrel:
@@ -87,9 +90,10 @@ with torch.no_grad():
             predicted_3d_pos[...,:2] = batch_input[...,:2]
         results_all.append(predicted_3d_pos.cpu().numpy())
 
+print("FW done")
 results_all = np.hstack(results_all)
 results_all = np.concatenate(results_all)
-render_and_save(results_all, '%s/X3D.mp4' % (opts.out_path), keep_imgs=False, fps=fps_in)
+render_and_save(results_all, '%s/X3D.mp4' % (opts.out_path), keep_imgs=False, fps=fps_in, with_conf=True)
 if opts.pixel:
     # Convert to pixel coordinates
     results_all = results_all * (min(vid_size) / 2.0)
