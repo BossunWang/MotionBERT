@@ -92,7 +92,9 @@ with torch.no_grad():
 
 print("FW done")
 results_all = np.hstack(results_all)
+print(results_all.shape)
 results_all = np.concatenate(results_all)
+print(results_all.shape)
 render_and_save(results_all, '%s/X3D.mp4' % (opts.out_path), keep_imgs=False, fps=fps_in, with_conf=True)
 if opts.pixel:
     # Convert to pixel coordinates

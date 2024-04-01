@@ -245,7 +245,7 @@ def motion2video(motion, save_path, colors, h=512, w=512, bg_color=(255, 255, 25
 
 def motion2video_3d(motion, save_path, fps=25, keep_imgs = False):
 #     motion: (17,3,N)
-    videowriter = imageio.get_writer(save_path, fps=fps)
+#     videowriter = imageio.get_writer(save_path, fps=fps)
     vlen = motion.shape[-1]
     save_name = save_path.split('.')[0]
     frames = []
@@ -279,10 +279,10 @@ def motion2video_3d(motion, save_path, fps=25, keep_imgs = False):
             else:
                 ax.plot(-xs, -zs, -ys, color=color_mid, lw=3, marker='o', markerfacecolor='w', markersize=3, markeredgewidth=2) # axis transformation for visualization
             
-        frame_vis = get_img_from_fig(fig)
-        videowriter.append_data(frame_vis)
+        # frame_vis = get_img_from_fig(fig)
+        # videowriter.append_data(frame_vis)
         plt.close()
-    videowriter.close()
+    # videowriter.close()
 
 def motion2video_mesh(motion, save_path, fps=25, keep_imgs = False, draw_face=True):
     videowriter = imageio.get_writer(save_path, fps=fps)
