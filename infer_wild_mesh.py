@@ -153,5 +153,9 @@ if opts.ref_3d_motion_path:
     root_cam = ref_pose[:, :1] * scale
     verts_all = verts_all - reg3d_all[:,:1] + root_cam
 
-render_and_save(verts_all, osp.join(opts.out_path, 'mesh.mp4'), keep_imgs=False, fps=fps_in, draw_face=True)
+
+video_name = os.path.splitext(os.path.basename(opts.json_path))[0]
+print(f'ky 3d:{reg3d_all.shape}')
+np.save(f'{opts.out_path}/{video_name}.npy', reg3d_all)
+# render_and_save(verts_all, osp.join(opts.out_path, 'mesh.mp4'), keep_imgs=False, fps=fps_in, draw_face=True)
 
