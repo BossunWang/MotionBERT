@@ -23,10 +23,11 @@ class ActionHeadClassification(nn.Module):
         feat = feat.reshape(N, M, -1)           # (N, M, J*C)
         feat = feat.mean(dim=1)
         feat = self.fc1(feat)
+        feat_embed = F.normalize(feat, dim=-1)
         feat = self.bn(feat)
         feat = self.relu(feat)    
         feat = self.fc2(feat)
-        return feat
+        return feat, feat_embed
         
 class ActionHeadEmbed(nn.Module):
     def __init__(self, dropout_ratio=0., dim_rep=512, num_joints=17, hidden_dim=2048):
@@ -59,7 +60,7 @@ class ActionNet(nn.Module):
         else:
             raise Exception('Version Error.')
         
-    def forward(self, x):
+    def forward(self, x, return_rep=False):
         '''
             Input: (N, M x T x 17 x 3) 
         '''
@@ -67,5 +68,9 @@ class ActionNet(nn.Module):
         x = x.reshape(N*M, T, J, C)        
         feat = self.backbone.get_representation(x)
         feat = feat.reshape([N, M, T, self.feat_J, -1])      # (N, M, T, J, C)
-        out = self.head(feat)
-        return out
+        out, feat_embed = self.head(feat)
+
+        if return_rep:
+            return out, feat_embed
+        else:
+            return out
