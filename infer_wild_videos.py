@@ -50,8 +50,10 @@ testloader_params = {
 video_files = os.listdir(opts.vid_dir_path)
 json_files = os.listdir(opts.json_dir_path)
 feat_dir = os.path.join(opts.out_path, "feats")
+feat_flip_dir = os.path.join(opts.out_path, "feats_flip")
 pose_dir = os.path.join(opts.out_path, "pose")
 os.makedirs(feat_dir, exist_ok=True)
+os.makedirs(feat_flip_dir, exist_ok=True)
 os.makedirs(pose_dir, exist_ok=True)
 
 for json_file in json_files:
@@ -75,6 +77,7 @@ for json_file in json_files:
 
     pose_results_all = []
     feat_results_all = []
+    feat_flip_results_all = []
 
     with torch.no_grad():
         for batch_input in tqdm(test_loader):
@@ -85,8 +88,12 @@ for json_file in json_files:
                 batch_input = batch_input[:, :, :, :2]
 
             predicted_feat = model_pos(batch_input, return_rep=True)
+
             if args.flip:
                 batch_input_flip = flip_data(batch_input)
+                predicted_flip_feat = model_pos(batch_input_flip, return_rep=True)
+                # print(f"flip feat diff: {abs(predicted_feat - predicted_flip_feat).mean()}")
+                feat_flip_results_all.append(predicted_flip_feat.squeeze(0))
                 predicted_3d_pos_1 = model_pos(batch_input)
                 predicted_3d_pos_flip = model_pos(batch_input_flip)
                 predicted_3d_pos_2 = flip_data(predicted_3d_pos_flip)  # Flip back
@@ -106,6 +113,8 @@ for json_file in json_files:
 
     pose_results_all = torch.cat(pose_results_all).cpu().numpy()
     feat_results_all = torch.cat(feat_results_all).cpu().numpy()
+    feat_flip_results_all = torch.cat(feat_flip_results_all).cpu().numpy()
 
     np.save(f'{pose_dir}/{video_name}.npy', pose_results_all)
     np.save(f'{feat_dir}/{video_name}.npy', feat_results_all)
+    np.save(f'{feat_flip_dir}/{video_name}.npy', feat_flip_results_all)
