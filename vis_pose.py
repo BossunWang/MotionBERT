@@ -10,13 +10,13 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 def pixel2world_vis_motion(motion, dim=2):
-#     pose: (17,2,N)
+    #     pose: (17,2,N)
     N = motion.shape[-1]
-    if dim==2:
-        offset = np.ones([2,N]).astype(np.float32)
+    if dim == 2:
+        offset = np.ones([2, N]).astype(np.float32)
     else:
-        offset = np.ones([3,N]).astype(np.float32)
-        offset[2,:] = 0
+        offset = np.ones([3, N]).astype(np.float32)
+        offset[2, :] = 0
     return (motion + offset) * 512 / 2
 
 
@@ -75,21 +75,29 @@ def motion2video_3d(motion, save_path, fps=25, keep_imgs=False):
     videowriter.close()
 
 
-def main():
-    source_dir = "/media/bossun/新增磁碟區/Datasets/DanceDatasets_part_video_3d_pose/pose"
-    target_dir = "/media/bossun/新增磁碟區/Datasets/DanceDatasets_part_video_3d_pose/pose_videos"
-
+def vis(source_dir, target_dir):
     os.makedirs(target_dir, exist_ok=True)
 
     for root, dirs, files in os.walk(source_dir):
         for f in files:
             results_all = np.load(os.path.join(root, f))
+            print(f'file name: {f}')
             print(results_all.shape)
             motion = np.transpose(results_all, (1, 2, 0))  # (T,17,D) -> (17,D,T)
             motion_world = pixel2world_vis_motion(motion, dim=3)
             save_path = f'{target_dir}/{f.replace(".npy", ".mp4")}'
             motion2video_3d(motion_world, save_path=save_path, keep_imgs=False, fps=30)
-            
+
 
 if __name__ == '__main__':
-    main()
+    # source_dir = "/media/bossun/新增磁碟區/Datasets/DanceDatasets_part_video_3d_pose/pose"
+    # target_dir = "/media/bossun/新增磁碟區/Datasets/DanceDatasets_part_video_3d_pose/pose_videos"
+    # vis(source_dir, target_dir)
+
+    source_dir = "/media/bossun/新增磁碟區/Datasets/Kpop_demo_part_3d_pose/pose"
+    target_dir = "/media/bossun/新增磁碟區/Datasets/Kpop_demo_part_3d_pose/pose_videos"
+    vis(source_dir, target_dir)
+
+    # source_dir = "/media/bossun/新增磁碟區/Datasets/Kpop_mesh_test/pose"
+    # target_dir = "/media/bossun/新增磁碟區/Datasets/Kpop_mesh_test/pose_videos"
+    # vis(source_dir, target_dir)
