@@ -18,6 +18,7 @@ def parse_args():
     parser.add_argument('-e', '--evaluate', default='checkpoint/pose3d/FT_MB_lite_MB_ft_h36m_global_lite/best_epoch.bin', type=str, metavar='FILENAME', help='checkpoint to evaluate (file name)')
     parser.add_argument('-j', '--json_dir_path', type=str, help='alphapose detection result json path')
     parser.add_argument('-v', '--vid_dir_path', type=str, help='video path')
+    parser.add_argument('-a', '--audio_feat_dir_path', type=str, help='audio feat path')
     parser.add_argument('-o', '--out_path', type=str, help='output path')
     parser.add_argument('--pixel', action='store_true', help='align with pixle coordinates')
     parser.add_argument('--focus', type=int, default=None, help='target person id')
@@ -57,21 +58,35 @@ os.makedirs(feat_flip_dir, exist_ok=True)
 os.makedirs(pose_dir, exist_ok=True)
 
 for json_file in json_files:
-    video_name = os.path.splitext(os.path.basename(json_file))[0]
-    video_file = os.path.join(opts.vid_dir_path, video_name + ".mp4")
+    file_name = os.path.splitext(os.path.basename(json_file))[0]
+    video_file = os.path.join(opts.vid_dir_path, file_name + ".mp4")
     json_file = os.path.join(opts.json_dir_path, json_file)
+    audio_feat_file = os.path.join(opts.audio_feat_dir_path, file_name + ".pkl")
+    assert os.path.isfile(audio_feat_file), str(f"{audio_feat_file} is not exist")
     assert os.path.isfile(video_file), str(f"{video_file} is not exist")
 
     vid = imageio.get_reader(video_file,  'ffmpeg')
     fps_in = vid.get_meta_data()['fps']
     vid_size = vid.get_meta_data()['size']
+    frames = vid.count_frames()
+    print(f'frames: {frames}')
+
+    with open(audio_feat_file, 'rb') as handle:
+        audio_data = pickle.load(handle)
+    beat_frames = audio_data['beat_frames']
+    beat_unit = audio_data['beat_unit']
+    audio_feat = audio_data["feat"]
+    beat_interval = (beat_frames[1:] - beat_frames[:-1]).mean() * beat_unit
+    beat_interval = np.ceil(beat_interval)
+    beat_interval = int(beat_interval)
+    assert beat_interval < opts.clip_len, str(f"beat_interval: {beat_interval} over {opts.clip_len}")
 
     if opts.pixel:
         # Keep relative scale with pixel coornidates
-        wild_dataset = WildDetDataset(json_file, clip_len=opts.clip_len, vid_size=vid_size, scale_range=None, focus=opts.focus)
+        wild_dataset = WildDetDataset(json_file, clip_len=beat_interval, vid_size=vid_size, scale_range=None, focus=opts.focus)
     else:
         # Scale to [-1,1]
-        wild_dataset = WildDetDataset(json_file, clip_len=opts.clip_len, scale_range=[1,1], focus=opts.focus)
+        wild_dataset = WildDetDataset(json_file, clip_len=beat_interval, scale_range=[1,1], focus=opts.focus)
 
     test_loader = DataLoader(wild_dataset, **testloader_params)
 
@@ -115,6 +130,8 @@ for json_file in json_files:
     feat_results_all = torch.cat(feat_results_all).cpu().numpy()
     feat_flip_results_all = torch.cat(feat_flip_results_all).cpu().numpy()
 
-    np.save(f'{pose_dir}/{video_name}.npy', pose_results_all)
-    np.save(f'{feat_dir}/{video_name}.npy', feat_results_all)
-    np.save(f'{feat_flip_dir}/{video_name}.npy', feat_flip_results_all)
+    print(f'feats frames: {feat_results_all.shape[0]}')
+    if abs(audio_feat.shape[0] - feat_results_all.shape[0]) < 5:
+        np.save(f'{pose_dir}/{file_name}.npy', pose_results_all)
+        np.save(f'{feat_dir}/{file_name}.npy', feat_results_all)
+        np.save(f'{feat_flip_dir}/{file_name}.npy', feat_flip_results_all)

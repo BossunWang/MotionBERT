@@ -94,6 +94,16 @@ In most use cases (especially with finetuning), `MotionBERT-Lite` gives a simila
 - [x] Demo for custom videos
 
 
+## Train Mapping Network between Music And Motion 
+```bash
+pip install info-nce-pytorch
+conda activate motionbert
+python concated_json.py
+sh infer_wild_videos.sh
+sh train_music_motion.sh
+```
+
+
 
 ## Citation
 
